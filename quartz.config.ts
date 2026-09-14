@@ -18,7 +18,6 @@ const config: QuartzConfig = {
     },
     locale: "zh-CN",
     baseUrl: process.env.BASE_URL ?? "https://xiaxiarui.github.io/Deep_Learning_Notes",
-,
     ignorePatterns: [
       "private",
       "xx-归档",
