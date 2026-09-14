@@ -1,6 +1,6 @@
-import { QuartzConfig } from "quartz/cfg"
-import * as Plugin from "quartz/plugins"
-import * as Component from "quartz/components"
+import { QuartzConfig } from "./quartz/cfg"
+import * as Plugin from "./quartz/plugins"
+import * as Component from "./quartz/components"
 import * as Shared from "./quartz.layout"
  
 /**

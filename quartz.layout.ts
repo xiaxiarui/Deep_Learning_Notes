@@ -1,5 +1,5 @@
-import { PageLayout, SharedLayout } from "quartz/cfg"
-import * as Component from "quartz/components"
+import { PageLayout, SharedLayout } from "./quartz/cfg"
+import * as Component from "./quartz/components"
  
 // 左侧边栏组件
 const left: Component.ComponentId[] = [
