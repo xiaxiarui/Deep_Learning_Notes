@@ -1,0 +1,19 @@
+{
+  "name": "my-notes",
+  "version": "1.0.0",
+  "description": "我的笔记",
+  "scripts": {
+    "dev": "node scripts/ensure-link.js && node scripts/dev.js",
+    "prebuild": "node scripts/ensure-link.js && node scripts/fix-markdown-links.js",
+    "build": "./scripts/build.sh",
+    "preview": "node scripts/ensure-link.js && npx quartz build --serve --port 4399 -d . && node scripts/fix-image-paths.js",
+    "fix": "node scripts/fix-image-paths.js",
+    "fix:links": "node scripts/fix-markdown-links.js"
+  },
+  "dependencies": {
+    "quartz": "github:jackyzha0/quartz#v4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}

@@ -1,0 +1,101 @@
+name: Deploy Quartz site to GitHub Pages
+ 
+# 使用说明：
+# 1. 在 GitHub 仓库 Settings → Pages → Source 中选择 "GitHub Actions"
+# 2. 这样会使用此自定义工作流进行构建和部署
+# 3. 如果选择 "Deploy from a branch"，GitHub 会使用默认的 pages-build-deployment 工作流
+# 4. 两个工作流不能同时使用，必须在 GitHub Pages 设置中选择一个
+ 
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+ 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+ 
+concurrency:
+  group: "pages"
+  cancel-in-progress: true  # 取消正在进行的部署，避免冲突
+ 
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for git info
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Dependencies
+        run: npm ci
+      - name: Ensure quartz link
+        run: node scripts/ensure-link.js
+      - name: Verify quartz symlink
+        run: |
+          echo "Checking quartz symlink..."
+          if [ -L quartz ]; then
+            echo "✓ quartz is a symlink"
+            LINK_TARGET=$(readlink quartz)
+            echo "Symlink target: $LINK_TARGET"
+            # 检查是否指向绝对路径
+            if [[ "$LINK_TARGET" == /* ]]; then
+              echo "⚠ Warning: symlink points to absolute path, will be fixed by build.sh"
+            else
+              echo "✓ symlink uses relative path"
+            fi
+            # 尝试解析路径（使用 realpath 或 readlink -f）
+            if command -v realpath >/dev/null 2>&1; then
+              RESOLVED=$(realpath quartz 2>/dev/null || echo 'unknown')
+            else
+              RESOLVED=$(readlink -f quartz 2>/dev/null || echo 'unknown')
+            fi
+            echo "Resolved path: $RESOLVED"
+            if [ -f quartz/build.ts ]; then
+              echo "✓ quartz/build.ts exists"
+            else
+              echo "✗ quartz/build.ts not found"
+              echo "This will be fixed by build.sh"
+            fi
+          elif [ -d quartz ]; then
+            echo "⚠ quartz exists but is not a symlink"
+            if [ -f quartz/build.ts ]; then
+              echo "✓ quartz/build.ts exists (but not a symlink)"
+            else
+              echo "✗ quartz/build.ts not found"
+              exit 1
+            fi
+          else
+            echo "✗ quartz does not exist (will be created by build.sh)"
+          fi
+      - name: Normalize markdown links
+        run: npm run fix:links
+      - name: Disable CustomOgImages plugin
+        run: node scripts/disable-og.js
+      - name: Verify Configuration
+        run: |
+          echo "Checking configuration files..."
+          ls -la quartz.config.ts quartz.layout.ts || echo "Config files not found"
+      - name: Build Quartz site
+        run: npm run build
+      - name: Fix image paths
+        run: npm run fix
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+ 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
